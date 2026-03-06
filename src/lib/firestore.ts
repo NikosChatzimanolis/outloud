@@ -146,11 +146,10 @@ export async function getThreadsForUser(uid: string): Promise<Thread[]> {
   const q = query(
     collection(db, 'threads'),
     where('participants', 'array-contains', uid),
-    orderBy('lastMessageAt', 'desc'),
     limit(50)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => {
+  const threads = snap.docs.map((d) => {
     const data = d.data();
     return {
       id: d.id,
@@ -159,13 +158,20 @@ export async function getThreadsForUser(uid: string): Promise<Thread[]> {
       lastMessagePreview: data.lastMessagePreview,
     };
   });
+  threads.sort((a, b) => {
+    const ta = a.lastMessageAt?.seconds ?? 0;
+    const tb = b.lastMessageAt?.seconds ?? 0;
+    return tb - ta;
+  });
+  return threads;
 }
 
 export function subscribeThreads(uid: string, callback: (threads: Thread[]) => void): () => void {
+  // Query without orderBy to avoid requiring a composite index (participants + lastMessageAt).
+  // Sort in memory so the app works before the index is built or without deploying indexes.
   const q = query(
     collection(db, 'threads'),
     where('participants', 'array-contains', uid),
-    orderBy('lastMessageAt', 'desc'),
     limit(50)
   );
   return onSnapshot(q, (snap) => {
@@ -177,6 +183,12 @@ export function subscribeThreads(uid: string, callback: (threads: Thread[]) => v
         lastMessageAt: data.lastMessageAt,
         lastMessagePreview: data.lastMessagePreview,
       };
+    });
+    // Newest first (null/undefined lastMessageAt at end)
+    threads.sort((a, b) => {
+      const ta = a.lastMessageAt?.seconds ?? 0;
+      const tb = b.lastMessageAt?.seconds ?? 0;
+      return tb - ta;
     });
     callback(threads);
   });

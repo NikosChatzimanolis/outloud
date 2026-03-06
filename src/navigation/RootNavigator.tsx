@@ -38,7 +38,11 @@ export function RootNavigator() {
     const unsub = onAuthStateChanged(auth, async (user) => {
       setUser(user ?? null);
       if (user) {
-        const profile = await getUserProfile(user.uid);
+        let profile = await getUserProfile(user.uid);
+        if (!profile && user.uid) {
+          await new Promise((r) => setTimeout(r, 400));
+          profile = await getUserProfile(user.uid);
+        }
         setProfile(profile ?? null);
       } else {
         setProfile(null);
@@ -59,10 +63,18 @@ export function RootNavigator() {
   const needsAuth = !user;
   const needsProfile = user && (!profile || !profile.username);
 
+  const initialRoute = needsOnboarding
+    ? 'Onboarding'
+    : needsAuth
+      ? 'Auth'
+      : needsProfile
+        ? 'CreateProfile'
+        : 'Home';
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName={initialRoute}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: '#0B1020' },

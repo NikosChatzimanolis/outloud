@@ -1,11 +1,21 @@
-import { getAnalytics, logEvent as firebaseLogEvent, Analytics } from 'firebase/analytics';
+import { Platform } from 'react-native';
+import { getAnalytics, logEvent as firebaseLogEvent, isSupported, Analytics } from 'firebase/analytics';
 import app from './firebase';
 
 let analytics: Analytics | null = null;
-try {
-  analytics = getAnalytics(app);
-} catch {
-  // Analytics may not be available in dev or web
+
+// Firebase Analytics uses cookies/IndexedDB and is not supported in React Native.
+// Only initialize on web; otherwise leave null so events no-op.
+if (Platform.OS === 'web') {
+  isSupported().then((supported) => {
+    if (supported) {
+      try {
+        analytics = getAnalytics(app);
+      } catch {
+        // ignore
+      }
+    }
+  });
 }
 
 export function logEvent(name: string, params?: Record<string, unknown>): void {

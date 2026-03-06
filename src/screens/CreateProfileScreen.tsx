@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Button, Input, Background, Avatar } from '../components';
 import { colors, typography, spacing } from '../theme';
 import { useAuthStore } from '../store';
-import { ensureUserProfile } from '../lib/auth';
+import { ensureUserProfile, getUserProfile } from '../lib/auth';
 
 export function CreateProfileScreen({ onFinish }: { onFinish: () => void }) {
   const [username, setUsername] = useState('');
@@ -14,6 +14,15 @@ export function CreateProfileScreen({ onFinish }: { onFinish: () => void }) {
   const [loading, setLoading] = useState(false);
   const user = useAuthStore((s) => s.user);
   const setProfile = useAuthStore((s) => s.setProfile);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    getUserProfile(user.uid).then((profile) => {
+      if (profile?.username) {
+        setProfile(profile);
+      }
+    });
+  }, [user?.uid, setProfile]);
 
   const checkUsername = async (name: string): Promise<boolean> => {
     if (!name || name.length < 2) return false;
@@ -46,7 +55,7 @@ export function CreateProfileScreen({ onFinish }: { onFinish: () => void }) {
     try {
       if (!user) return;
       await ensureUserProfile(user.uid, { username: u, displayName: d });
-      const profile = await import('../lib/auth').then((m) => m.getUserProfile(user.uid));
+      const profile = await getUserProfile(user.uid);
       setProfile(profile ?? null);
       onFinish();
     } catch (e: unknown) {

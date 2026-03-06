@@ -12,6 +12,7 @@ import {
   updateRelationshipStatus,
   subscribeRelationships,
 } from '../lib/firestore';
+import { auth } from '../lib/firebase';
 import { events as analytics } from '../lib/analytics';
 
 export function AddContactScreen() {
@@ -37,10 +38,16 @@ export function AddContactScreen() {
 
   const handleSearch = async () => {
     if (!user || !username.trim()) return;
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setError('Session expired. Please log out and log in again.');
+      return;
+    }
     setError(null);
     setSearchResult(null);
     setLoading(true);
     try {
+      await currentUser.getIdToken(true);
       const found = await getUserByUsername(username.trim());
       if (!found) {
         setError('User not found.');

@@ -8,7 +8,10 @@ service cloud.firestore {
       return request.auth.uid == uid;
     }
     match /users/{uid} {
-      allow read, write: if isAuth() && isOwner(uid);
+      // Read: any authenticated user (needed for username lookup and showing names in threads)
+      allow read: if isAuth();
+      // Write: only the owner (create/update own profile)
+      allow write: if isAuth() && isOwner(uid);
     }
     match /relationships/{relId} {
       allow read: if isAuth() && (resource.data.userA == request.auth.uid || resource.data.userB == request.auth.uid);

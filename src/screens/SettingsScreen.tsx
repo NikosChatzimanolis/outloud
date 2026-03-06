@@ -116,6 +116,16 @@ export function SettingsScreen() {
           </TouchableOpacity>
 
           <Text style={styles.sectionTitle}>Account</Text>
+          <View style={styles.accountDetails}>
+            <View style={styles.accountRow}>
+              <Text style={styles.accountLabel}>Name</Text>
+              <Text style={styles.accountValue}>{profile?.displayName || profile?.username || '—'}</Text>
+            </View>
+            <View style={styles.accountRow}>
+              <Text style={styles.accountLabel}>Email</Text>
+              <Text style={styles.accountValue}>{user?.email ?? '—'}</Text>
+            </View>
+          </View>
           <Button title="Log out" variant="secondary" onPress={() => signOut()} style={styles.logoutBtn} />
           <TouchableOpacity onPress={() => {}}>
             <Text style={styles.danger}>Delete account</Text>
@@ -149,6 +159,10 @@ const styles = StyleSheet.create({
   menuRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16 },
   menuText: { ...typography.body, color: colors.textPrimary },
   chevron: { fontSize: 18, color: colors.textMuted },
+  accountDetails: { marginBottom: 8 },
+  accountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
+  accountLabel: { ...typography.caption, color: colors.textMuted },
+  accountValue: { ...typography.body, color: colors.textPrimary },
   logoutBtn: { marginTop: 8 },
   danger: { ...typography.body, color: colors.warmRose, marginTop: 16 },
 });

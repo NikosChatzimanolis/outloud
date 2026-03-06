@@ -4,8 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar, IconButton, FAB, Background } from '../components';
 import { colors, typography, spacing } from '../theme';
-import { useAuthStore, useThreadsStore } from '../store';
-import { subscribeThreads } from '../lib/firestore';
+import { useAuthStore, useThreadsStore, useRelationshipsStore } from '../store';
+import { subscribeThreads, subscribeRelationships } from '../lib/firestore';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { registerForPushNotifications } from '../lib/push';
@@ -16,7 +16,22 @@ export function HomeScreen() {
   const user = useAuthStore((s) => s.user);
   const profile = useAuthStore((s) => s.profile);
   const { threads, setThreads } = useThreadsStore();
+  const { relationships, setRelationships } = useRelationshipsStore();
   useNotificationHandler(navigation, !!user?.uid);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = subscribeRelationships(user.uid, setRelationships);
+    return unsub;
+  }, [user?.uid, setRelationships]);
+
+  // Only show threads where the relationship is approved (not pending/blocked)
+  const approvedThreads = React.useMemo(() => {
+    return threads.filter((t) => {
+      const rel = relationships.find((r) => r.id === t.id);
+      return rel?.status === 'approved';
+    });
+  }, [threads, relationships]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -40,7 +55,7 @@ export function HomeScreen() {
   useEffect(() => {
     const load = async () => {
       const withNames = await Promise.all(
-        threads.map(async (t) => {
+        approvedThreads.map(async (t) => {
           const otherUid = getOtherParticipant(t.participants);
           const userRef = doc(db, 'users', otherUid);
           const userSnap = await getDoc(userRef);
@@ -52,7 +67,7 @@ export function HomeScreen() {
       setThreadList(withNames);
     };
     load();
-  }, [threads, user?.uid]);
+  }, [approvedThreads, user?.uid]);
 
   return (
     <Background>

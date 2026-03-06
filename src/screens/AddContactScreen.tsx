@@ -169,7 +169,7 @@ export function AddContactScreen() {
                     <Text style={styles.resultName}>{searchResult.displayName}</Text>
                     <Text style={styles.resultUsername}>@{searchResult.username}</Text>
                   </View>
-                  <Button title="Add" onPress={handleSendRequest} loading={loading} />
+                  <Button title="Send request" onPress={handleSendRequest} loading={loading} />
                 </View>
               </Card>
             )}
